@@ -1,0 +1,142 @@
+Título : Consultas PL/SQL 
+
+Descrição: Consultas solicitadas pela empresa Bike Stores Inc para fazer o levantamento de informações através do Banco de Dados.
+
+Linguagem: PL/SQL - SQL DEVELOPER
+
+-----------------------//------------------------------------------//-------------------------------------------
+
+Resumo: A consulta foi feita pra encontrar clientes que estão cadastrados, mas nunca fizeram nenhuma compra. 
+Usei LEFT JOIN pra pegar todos os clientes, e filtrei pelos que não aparecem na tabela de pedidos.
+
+-- Listar todos os Clientes que não realizaram uma compra
+
+SELECT 
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.phone,
+    c.city,
+    c.state
+FROM 
+    customers c
+LEFT JOIN 
+    orders o 
+ON 
+    c.customer_id = o.customer_id
+WHERE 
+    o.order_id IS NULL;
+
+-----------------------//------------------------------------------//-------------------------------------------
+Resumo: Utilizei o LEFT JOIN com order_items pra garantir que todos os produtos entrem na lista, até os que nunca foram vendidos. Depois filtrei só os que não têm venda registrada. Já os INNER JOINs com brands e 
+categories servem só pra completar as informações do produto com marca e categoria  
+por isso eles são diretos, sem preocupação se existe ou não.
+
+-- Listar os produtos que não foram comprados
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.list_price,
+    b.brand_name,
+    c.category_name
+FROM 
+    products p
+LEFT JOIN 
+    order_items oi 
+ON 
+    p.product_id = oi.product_id
+INNER JOIN 
+    brands b 
+ON 
+    p.brand_id = b.brand_id
+INNER JOIN 
+    categories c 
+ON 
+    p.category_id = c.category_id
+WHERE 
+    oi.order_id IS NULL;
+
+-----------------------//------------------------------------------//-------------------------------------------
+
+Resumo: A consulta busca produtos que existem no sistema e estão com o estoque igual a zero. 
+Todos os JOINs são INNER porque só quero registros que realmente existam e façam sentido juntos, produto, loja, marca e categoria. 
+O filtro s.quantity = 0 pega só os produtos que estão sem nenhuma unidade disponível.
+
+-- Listar os Produtos sem Estoque
+
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.list_price,
+    b.brand_name,
+    c.category_name,
+    s.store_id,
+    st.store_name
+FROM 
+    products p
+INNER JOIN 
+    stocks s 
+ON 
+    p.product_id = s.product_id
+INNER JOIN 
+    stores st 
+ON 
+    s.store_id = st.store_id
+INNER JOIN 
+    brands b 
+ON 
+    p.brand_id = b.brand_id
+INNER JOIN 
+    categories c 
+ON 
+    p.category_id = c.category_id
+WHERE 
+    s.quantity = 0;
+
+-----------------------//------------------------------------------//-------------------------------------------
+
+Resumo: A ideia é mostrar quantas unidades de cada marca foram vendidas em cada loja. 
+Como eu quero apenas vendas reais e completas, usamos só INNER JOIN. Assim, garantimos que todos os registros envolvidos (pedido, produto, marca e loja) existam e estejam ligados diretamente à venda.
+
+-- Agrupar a quantidade de vendas que uma determinada Marca por Loja
+
+SELECT 
+    s.store_name,
+    b.brand_name,
+    SUM(oi.quantity) AS total_vendas
+FROM 
+    order_items oi
+JOIN 
+    orders o ON oi.order_id = o.order_id
+JOIN 
+    products p ON oi.product_id = p.product_id
+JOIN 
+    brands b ON p.brand_id = b.brand_id
+JOIN 
+    stores s ON o.store_id = s.store_id
+GROUP BY 
+    s.store_name, b.brand_name
+ORDER BY 
+    s.store_name, b.brand_name;
+
+-----------------------//------------------------------------------//-------------------------------------------
+
+Resumo: A consulta mostra os funcionários que nunca registraram um pedido. 
+Usamos LEFT JOIN pra pegar todos os funcionários, e filtramos os que não têm nenhum pedido ligado a eles, identificando quem nunca vendeu nada.
+
+-- Listar os Funcionários que não estão relacionados a um Pedido
+
+SELECT 
+    s.staff_id,
+    s.first_name,
+    s.last_name,
+    s.email,
+    s.phone
+FROM 
+    staffs s
+LEFT JOIN 
+    orders o ON s.staff_id = o.staff_id
+WHERE 
+    o.order_id IS NULL;
